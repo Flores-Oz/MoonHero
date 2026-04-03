@@ -1,3 +1,51 @@
+function generatePatternSection(startTime, endTime, interval, pattern) {
+  const chart = [];
+  let time = startTime;
+  let index = 0;
+
+  while (time <= endTime) {
+    chart.push({
+      time,
+      lane: pattern[index % pattern.length]
+    });
+
+    time += interval;
+    index++;
+  }
+
+  return chart;
+}
+
+function buildPromiseChart() {
+  return [
+    ...generatePatternSection(0, 30000, 850, [0, 1, 2, 3]),
+    ...generatePatternSection(32000, 65000, 800, [0, 2, 1, 3]),
+    ...generatePatternSection(68000, 100000, 750, [0, 1, 0, 1, 2, 3]),
+    ...generatePatternSection(103000, 135000, 800, [3, 2, 1, 0]),
+    ...generatePatternSection(138000, 170000, 700, [0, 1, 2, 1, 0, 2, 3, 2])
+  ];
+}
+
+function buildMikuChart() {
+  return [
+    ...generatePatternSection(0, 40000, 800, [0, 1, 2, 3]),
+    ...generatePatternSection(43000, 90000, 750, [0, 2, 1, 3]),
+    ...generatePatternSection(93000, 140000, 700, [0, 1, 0, 2, 1, 3]),
+    ...generatePatternSection(143000, 190000, 750, [3, 2, 1, 0]),
+    ...generatePatternSection(193000, 240000, 680, [0, 1, 2, 1, 0, 2, 3, 2])
+  ];
+}
+
+function buildElectricAngelChart() {
+  return [
+    ...generatePatternSection(0, 35000, 780, [0, 1, 2, 3]),
+    ...generatePatternSection(38000, 80000, 720, [0, 2, 1, 3]),
+    ...generatePatternSection(83000, 125000, 680, [0, 1, 0, 2, 1, 3]),
+    ...generatePatternSection(128000, 160000, 720, [3, 2, 1, 0]),
+    ...generatePatternSection(163000, 193000, 650, [0, 1, 2, 1, 0, 2, 3, 2])
+  ];
+}
+
 export default class LevelSelectScene extends Phaser.Scene {
   constructor() {
     super("LevelSelectScene");
@@ -20,91 +68,21 @@ export default class LevelSelectScene extends Phaser.Scene {
         name: "Promise",
         video: "assets/video/Promise.mp4",
         audio: "assets/audio/promise.wav",
-        chart: [
-          { time: 1000, lane: 0 },
-          { time: 1600, lane: 1 },
-          { time: 2200, lane: 2 },
-          { time: 2800, lane: 3 },
-
-          { time: 3600, lane: 0 },
-          { time: 4200, lane: 1 },
-          { time: 4800, lane: 2 },
-          { time: 5400, lane: 3 },
-
-          { time: 6200, lane: 0 },
-          { time: 6800, lane: 2 },
-          { time: 7400, lane: 1 },
-          { time: 8000, lane: 3 },
-
-          { time: 9000, lane: 0 },
-          { time: 9800, lane: 1 },
-          { time: 10600, lane: 2 },
-          { time: 11400, lane: 3 }
-        ]
+        chart: buildPromiseChart()
       },
       {
         id: 2,
         name: "Miku",
         video: "assets/video/Miku.mp4",
         audio: "assets/audio/miku.wav",
-        chart: [
-          { time: 1000, lane: 0 },
-          { time: 1600, lane: 1 },
-          { time: 2200, lane: 2 },
-          { time: 2800, lane: 3 },
-
-          { time: 3600, lane: 1 },
-          { time: 4200, lane: 0 },
-          { time: 4800, lane: 2 },
-          { time: 5400, lane: 3 },
-
-          { time: 3800, lane: 0 },
-          { time: 4200, lane: 2 },
-          { time: 4600, lane: 1 },
-          { time: 8000, lane: 3 },
-
-          { time: 6200, lane: 0 },
-          { time: 6800, lane: 1 },
-          { time: 7400, lane: 2 },
-          { time: 6600, lane: 3 },
-
-          { time: 9000, lane: 1 },
-          { time: 9800, lane: 2 },
-          { time: 10600, lane: 0 },
-          { time: 11400, lane: 3 }
-        ]
+        chart: buildMikuChart()
       },
       {
         id: 3,
         name: "Electric Angel",
         video: "assets/video/ElectricAngel.mp4",
         audio: "assets/audio/electric.wav",
-        chart: [
-          { time: 900, lane: 0 },
-          { time: 1200, lane: 2 },
-          { time: 1500, lane: 1 },
-          { time: 1800, lane: 3 },
-
-          { time: 2100, lane: 0 },
-          { time: 2400, lane: 1 },
-          { time: 2700, lane: 2 },
-          { time: 3000, lane: 3 },
-
-          { time: 3400, lane: 1 },
-          { time: 3800, lane: 0 },
-          { time: 4200, lane: 2 },
-          { time: 4600, lane: 3 },
-
-          { time: 5000, lane: 0 },
-          { time: 5300, lane: 2 },
-          { time: 5600, lane: 1 },
-          { time: 5900, lane: 3 },
-
-          { time: 6200, lane: 0 },
-          { time: 6500, lane: 1 },
-          { time: 6800, lane: 2 },
-          { time: 7100, lane: 3 }
-        ]
+        chart: buildElectricAngelChart()
       }
     ];
 

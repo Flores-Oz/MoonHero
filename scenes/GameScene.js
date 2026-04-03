@@ -53,13 +53,13 @@ export default class GameScene extends Phaser.Scene {
     this.noteSpawnY = -30;
     this.receptorY = this.height * 0.84;
 
-    this.perfectWindow = 70;
-    this.goodWindow = 140;
-    this.missWindow = 220;
-    this.globalOffset = -100;
+    this.perfectWindow = 90;
+    this.goodWindow = 180;
+    this.missWindow = 260;
+    this.globalOffset = -120;
 
-    this.maxLives = 5;
-    this.lives = 5;
+    this.maxLives = 999;
+    this.lives = 999;
     this.gameOver = false;
     this.levelFinished = false;
 
@@ -439,10 +439,10 @@ export default class GameScene extends Phaser.Scene {
     if (this.gameOver || this.levelFinished) return;
 
     this.combo = 0;
-    this.lives--;
+    this.lives -= 0.5;
 
     this.comboText.setText(`Combo: ${this.combo}`);
-    this.livesText.setText(`Lives: ${this.lives}`);
+    this.livesText.setText(`Lives: ${Math.ceil(this.lives)}`);
     this.showFeedback(label);
 
     if (this.lives <= 0) {
