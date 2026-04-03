@@ -45,6 +45,128 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  createRoundedButton(x, y, width, height, options) {
+    const {
+      title = "Botón",
+      subtitle = "",
+      onClick = () => {},
+      baseColor = 0x1f3f8f,
+      hoverColor = 0x315ee8,
+      glowColor = 0x74a9ff,
+      borderColor = 0xc7dbff,
+      radius = 24,
+      titleSize = "38px",
+      subtitleSize = "20px"
+    } = options;
+
+    const container = this.add.container(x, y);
+
+    const glow = this.add.graphics();
+    const bg = this.add.graphics();
+    const shine = this.add.graphics();
+
+    const drawButton = (fillColor, strokeAlpha = 0.5) => {
+      bg.clear();
+      bg.fillStyle(fillColor, 1);
+      bg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
+      bg.lineStyle(2, borderColor, strokeAlpha);
+      bg.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
+    };
+
+    const drawGlow = (alpha = 0.12) => {
+      glow.clear();
+      glow.fillStyle(glowColor, alpha);
+      glow.fillRoundedRect(
+        -width / 2 - 8,
+        -height / 2 - 8,
+        width + 16,
+        height + 16,
+        radius + 8
+      );
+    };
+
+    const drawShine = () => {
+      shine.clear();
+      shine.fillStyle(0xffffff, 0.06);
+      shine.fillRoundedRect(
+        -width / 2 + 10,
+        -height / 2 + 8,
+        width - 20,
+        height * 0.42,
+        radius
+      );
+    };
+
+    drawGlow(0.12);
+    drawButton(baseColor, 0.5);
+    drawShine();
+
+    const titleText = this.add.text(0, subtitle ? -12 : 0, title, {
+      fontSize: titleSize,
+      color: "#ffffff",
+      fontStyle: "bold",
+      fontFamily: "Georgia, serif"
+    }).setOrigin(0.5);
+
+    const subtitleText = this.add.text(0, 24, subtitle, {
+      fontSize: subtitleSize,
+      color: "#dbeafe",
+      fontFamily: "Georgia, serif"
+    }).setOrigin(0.5);
+
+    if (!subtitle) {
+      subtitleText.setVisible(false);
+    }
+
+    const hitArea = this.add.rectangle(0, 0, width, height, 0x000000, 0)
+      .setInteractive({ useHandCursor: true });
+
+    container.add([glow, bg, shine, titleText, subtitleText, hitArea]);
+
+    hitArea.on("pointerover", () => {
+      drawGlow(0.22);
+      drawButton(hoverColor, 0.75);
+
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.04,
+        scaleY: 1.04,
+        duration: 120,
+        ease: "Power2"
+      });
+    });
+
+    hitArea.on("pointerout", () => {
+      drawGlow(0.12);
+      drawButton(baseColor, 0.5);
+
+      this.tweens.add({
+        targets: container,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 120,
+        ease: "Power2"
+      });
+    });
+
+    hitArea.on("pointerdown", () => {
+      this.cameras.main.flash(180, 80, 120, 255);
+
+      this.tweens.add({
+        targets: container,
+        scaleX: 0.98,
+        scaleY: 0.98,
+        duration: 70,
+        yoyo: true,
+        ease: "Power2"
+      });
+
+      onClick();
+    });
+
+    return container;
+  }
+
   create() {
     this.width = this.scale.width;
     this.height = this.scale.height;
@@ -327,51 +449,43 @@ export default class GameScene extends Phaser.Scene {
     if (this.retryButton) this.retryButton.destroy();
     if (this.backButton) this.backButton.destroy();
 
-    this.retryButton = this.add.text(this.width / 2, this.height / 2 + 40, "REINTENTAR", {
-      fontSize: "34px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      backgroundColor: "#2563eb",
-      padding: { left: 24, right: 24, top: 12, bottom: 12 }
-    })
-      .setOrigin(0.5)
-      .setDepth(6)
-      .setInteractive({ useHandCursor: true });
+    this.retryButton = this.createRoundedButton(
+      this.width / 2,
+      this.height / 2 + 60,
+      320,
+      90,
+      {
+        title: "REINTENTAR",
+        baseColor: 0x1f3f8f,
+        hoverColor: 0x315ee8,
+        glowColor: 0x74a9ff,
+        borderColor: 0xc7dbff,
+        radius: 24,
+        titleSize: "34px",
+        onClick: () => {
+          this.scene.restart({ levelData: this.levelData });
+        }
+      }
+    );
 
-    this.retryButton.on("pointerover", () => {
-      this.retryButton.setStyle({ backgroundColor: "#3b82f6" });
-    });
-
-    this.retryButton.on("pointerout", () => {
-      this.retryButton.setStyle({ backgroundColor: "#2563eb" });
-    });
-
-    this.retryButton.on("pointerdown", () => {
-      this.scene.restart({ levelData: this.levelData });
-    });
-
-    this.backButton = this.add.text(this.width / 2, this.height / 2 + 110, "VOLVER A NIVELES", {
-      fontSize: "28px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      backgroundColor: "#334155",
-      padding: { left: 20, right: 20, top: 10, bottom: 10 }
-    })
-      .setOrigin(0.5)
-      .setDepth(6)
-      .setInteractive({ useHandCursor: true });
-
-    this.backButton.on("pointerover", () => {
-      this.backButton.setStyle({ backgroundColor: "#475569" });
-    });
-
-    this.backButton.on("pointerout", () => {
-      this.backButton.setStyle({ backgroundColor: "#334155" });
-    });
-
-    this.backButton.on("pointerdown", () => {
-      this.scene.start("LevelSelectScene");
-    });
+    this.backButton = this.createRoundedButton(
+      this.width / 2,
+      this.height / 2 + 160,
+      320,
+      80,
+      {
+        title: "VOLVER",
+        baseColor: 0x1e293b,
+        hoverColor: 0x334155,
+        glowColor: 0x64748b,
+        borderColor: 0x94a3b8,
+        radius: 20,
+        titleSize: "28px",
+        onClick: () => {
+          this.scene.start("LevelSelectScene");
+        }
+      }
+    );
   }
 
   spawnNote(laneIndex, targetTime = null) {
