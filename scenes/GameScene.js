@@ -58,8 +58,8 @@ export default class GameScene extends Phaser.Scene {
     this.missWindow = 260;
     this.globalOffset = -120;
 
-    this.maxLives = 999;
-    this.lives = 999;
+    this.maxLives = 5;
+    this.lives = 5;
     this.gameOver = false;
     this.levelFinished = false;
 
@@ -239,9 +239,12 @@ export default class GameScene extends Phaser.Scene {
       this.receptors.push(receptor);
 
       this.add.text(lane.x, this.receptorY + 50, lane.key, {
-        fontSize: "30px",
+        fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+        fontSize: "32px",
         color: "#ffffff",
-        fontStyle: "bold"
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 4
       })
         .setOrigin(0.5)
         .setDepth(2);
@@ -258,46 +261,66 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createUI() {
-    this.scoreText = this.add.text(40, 30, "Score: 0", {
-      fontSize: "36px",
-      color: "#ffffff"
-    }).setDepth(4);
+  const uiFont = "'Trebuchet MS', 'Verdana', sans-serif";
 
-    this.comboText = this.add.text(40, 75, "Combo: 0", {
-      fontSize: "36px",
-      color: "#ffffff"
-    }).setDepth(4);
+  this.scoreText = this.add.text(40, 30, "Score: 0", {
+    fontFamily: uiFont,
+    fontSize: "36px",
+    color: "#ffffff",
+    stroke: "#000000",
+    strokeThickness: 4
+  }).setDepth(4);
 
-    this.livesText = this.add.text(40, 120, `Lives: ${this.lives}`, {
-      fontSize: "36px",
-      color: "#ff8080",
-      fontStyle: "bold"
-    }).setDepth(4);
+  this.comboText = this.add.text(40, 75, "Combo: 0", {
+    fontFamily: uiFont,
+    fontSize: "36px",
+    color: "#ffffff",
+    stroke: "#000000",
+    strokeThickness: 4
+  }).setDepth(4);
 
-    this.feedbackText = this.add.text(this.width / 2, 80, "Preparado...", {
-      fontSize: "40px",
-      color: "#ffffff",
-      fontStyle: "bold"
-    })
-      .setOrigin(0.5)
-      .setDepth(4);
+  this.livesText = this.add.text(40, 120, `Lives: ${this.lives}`, {
+    fontFamily: uiFont,
+    fontSize: "36px",
+    color: "#ff8080",
+    fontStyle: "bold",
+    stroke: "#000000",
+    strokeThickness: 4
+  }).setDepth(4);
 
-    this.gameOverText = this.add.text(this.width / 2, this.height / 2 - 80, "", {
-      fontSize: "72px",
-      color: "#ff4d4d",
-      fontStyle: "bold",
-      align: "center"
-    })
-      .setOrigin(0.5)
-      .setDepth(5);
+  this.feedbackText = this.add.text(this.width / 2, 80, "Preparado...", {
+    fontFamily: uiFont,
+    fontSize: "42px",
+    color: "#ffffff",
+    fontStyle: "bold",
+    stroke: "#000000",
+    strokeThickness: 6
+  })
+    .setOrigin(0.5)
+    .setDepth(4);
 
-    this.levelNameText = this.add.text(this.width - 40, 30, this.levelData.name, {
-      fontSize: "32px",
-      color: "#ffffff",
-      fontStyle: "bold"
-    })
-      .setOrigin(1, 0)
-      .setDepth(4);
+  this.gameOverText = this.add.text(this.width / 2, this.height / 2 - 80, "", {
+    fontFamily: uiFont,
+    fontSize: "72px",
+    color: "#ff4d4d",
+    fontStyle: "bold",
+    align: "center",
+    stroke: "#000000",
+    strokeThickness: 8
+  })
+    .setOrigin(0.5)
+    .setDepth(5);
+
+  this.levelNameText = this.add.text(this.width - 40, 30, this.levelData.name, {
+    fontFamily: uiFont,
+    fontSize: "32px",
+    color: "#ffffff",
+    fontStyle: "bold",
+    stroke: "#000000",
+    strokeThickness: 4
+  })
+    .setOrigin(1, 0)
+    .setDepth(4);
   }
 
   createGameOverButtons() {
@@ -354,6 +377,15 @@ export default class GameScene extends Phaser.Scene {
   spawnNote(laneIndex, targetTime = null) {
     const lane = this.lanes[laneIndex];
 
+    const glow = this.add.rectangle(
+      lane.x,
+      this.noteSpawnY,
+      this.noteWidth + 26,
+      this.noteHeight + 18,
+      lane.color,
+      0.22
+    ).setDepth(2.8);
+
     const note = this.add.rectangle(
       lane.x,
       this.noteSpawnY,
@@ -363,6 +395,17 @@ export default class GameScene extends Phaser.Scene {
       1
     ).setDepth(3);
 
+    this.tweens.add({
+      targets: glow,
+      alpha: 0.45,
+      scaleX: 1.08,
+      scaleY: 1.12,
+      duration: 280,
+      yoyo: true,
+      repeat: -1
+    });
+
+    note.glow = glow;
     note.laneIndex = laneIndex;
     note.hit = false;
     note.targetTime = targetTime;
@@ -378,11 +421,19 @@ export default class GameScene extends Phaser.Scene {
     this.tweens.killTweensOf(receptor);
     receptor.scaleY = 1;
 
+    receptor.setFillStyle(0xffffff, 1);
+
     this.tweens.add({
       targets: receptor,
       scaleY: 1.5,
       duration: 60,
       yoyo: true
+    });
+
+    this.time.delayedCall(100, () => {
+      if (receptor.active) {
+        receptor.setFillStyle(0xffffff, 0.9);
+      }
     });
 
     const currentSongTime = this.getSongTime();
@@ -416,30 +467,91 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  registerHit(note, label, points, delta = null) {
-    note.hit = true;
-    note.destroy();
+  spawnPerfectParticles(x, y, color = 0xffffff) {
+    for (let i = 0; i < 8; i++) {
+      const particle = this.add.circle(x, y, Phaser.Math.Between(3, 6), color, 1)
+        .setDepth(4);
 
-    this.combo++;
-    this.score += points;
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const distance = Phaser.Math.Between(24, 52);
 
-    this.scoreText.setText(`Score: ${this.score}`);
-    this.comboText.setText(`Combo: ${this.combo}`);
+      const targetX = x + Math.cos(angle) * distance;
+      const targetY = y + Math.sin(angle) * distance;
 
-    if (delta !== null) {
-      this.showFeedback(`${label}  ${Math.round(delta)}ms`);
-    } else {
-      this.showFeedback(label);
+      this.tweens.add({
+        targets: particle,
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        scale: 0.2,
+        duration: 320,
+        ease: "Cubic.easeOut",
+        onComplete: () => particle.destroy()
+      });
     }
+  }
 
-    this.tryFinishLevel();
+  registerHit(note, label, points, delta = null) {
+  note.hit = true;
+
+  if (note.glow) {
+    this.tweens.killTweensOf(note.glow);
+  }
+
+  const hitX = note.x;
+  const hitY = this.receptorY;
+
+  this.combo++;
+  this.score += points;
+
+  this.scoreText.setText(`Score: ${this.score}`);
+  this.comboText.setText(`Combo: ${this.combo}`);
+
+  if (label === "PERFECT") {
+    this.spawnPerfectParticles(hitX, hitY, 0xffffff);
+  }
+
+  this.tweens.killTweensOf(this.cameras.main);
+  this.cameras.main.zoom = 1;
+
+  this.tweens.add({
+    targets: this.cameras.main,
+    zoom: 1.02,
+    duration: 60,
+    yoyo: true
+  });
+
+  if (delta !== null) {
+    this.showFeedback(`${label}  ${Math.round(delta)}ms`);
+  } else {
+    this.showFeedback(label);
+  }
+
+  // POP de la nota + glow
+  this.tweens.add({
+    targets: [note, note.glow].filter(Boolean),
+    scaleX: 1.25,
+    scaleY: 1.25,
+    alpha: 0,
+    duration: 120,
+    ease: "Back.easeOut",
+      onComplete: () => {
+        if (note.glow && note.glow.active) {
+          note.glow.destroy();
+        }
+        if (note.active) {
+          note.destroy();
+        }
+        this.tryFinishLevel();
+      }
+    });
   }
 
   registerMiss(label = "MISS") {
     if (this.gameOver || this.levelFinished) return;
 
     this.combo = 0;
-    this.lives -= 0.5;
+    this.lives--;
 
     this.comboText.setText(`Combo: ${this.combo}`);
     this.livesText.setText(`Lives: ${Math.ceil(this.lives)}`);
@@ -465,6 +577,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.notes.getChildren().forEach((note) => {
+      if (note.glow) {
+        this.tweens.killTweensOf(note.glow);
+        note.glow.destroy();
+      }
       if (note.active) note.destroy();
     });
 
@@ -495,6 +611,14 @@ export default class GameScene extends Phaser.Scene {
       this.bgVideo.stop();
     }
 
+    this.notes.getChildren().forEach((note) => {
+      if (note.glow) {
+        this.tweens.killTweensOf(note.glow);
+        note.glow.destroy();
+      }
+      if (note.active) note.destroy();
+    });
+
     this.gameOverText.setColor("#22c55e");
     this.gameOverText.setText("NIVEL COMPLETADO");
     this.feedbackText.setText("");
@@ -505,6 +629,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showFeedback(text) {
+    let color = "#ffffff";
+
+    if (text.includes("PERFECT")) color = "#22c55e";
+    else if (text.includes("GOOD")) color = "#eab308";
+    else if (text.includes("MISS")) color = "#ef4444";
+
+    this.feedbackText.setColor(color);
     this.feedbackText.setText(text);
     this.feedbackText.alpha = 1;
 
@@ -538,10 +669,20 @@ export default class GameScene extends Phaser.Scene {
 
       note.y += this.scrollSpeed * (delta / 1000);
 
+      if (note.glow && note.glow.active) {
+        note.glow.y = note.y;
+        note.glow.x = note.x;
+      }
+
       const tooLateByTime = currentSongTime - note.targetTime > this.missWindow;
       const passedLine = note.y > this.receptorY + 20;
 
       if (tooLateByTime && passedLine && !note.hit) {
+        if (note.glow) {
+          this.tweens.killTweensOf(note.glow);
+          note.glow.destroy();
+        }
+
         note.destroy();
         this.registerMiss("MISS");
       }
