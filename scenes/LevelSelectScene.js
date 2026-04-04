@@ -62,7 +62,8 @@ export default class LevelSelectScene extends Phaser.Scene {
       borderColor = 0xbfd7ff,
       radius = 24,
       titleSize = "34px",
-      subtitleSize = "20px"
+      subtitleSize = "20px",
+      locked = false
     } = options;
 
     const container = this.add.container(x, y);
@@ -103,7 +104,7 @@ export default class LevelSelectScene extends Phaser.Scene {
       );
     };
 
-    drawGlow(0.10);
+    drawGlow(locked ? 0.04 : 0.10);
     drawButton(baseColor, 0.45);
     drawShine();
 
@@ -129,8 +130,12 @@ export default class LevelSelectScene extends Phaser.Scene {
 
     container.add([glow, bg, shine, titleText, subtitleText, hitArea]);
 
+    if (locked) {
+      container.alpha = 0.82;
+    }
+
     hitArea.on("pointerover", () => {
-      drawGlow(0.20);
+      drawGlow(locked ? 0.09 : 0.20);
       drawButton(hoverColor, 0.75);
 
       this.tweens.add({
@@ -143,7 +148,7 @@ export default class LevelSelectScene extends Phaser.Scene {
     });
 
     hitArea.on("pointerout", () => {
-      drawGlow(0.10);
+      drawGlow(locked ? 0.04 : 0.10);
       drawButton(baseColor, 0.45);
 
       this.tweens.add({
@@ -173,23 +178,86 @@ export default class LevelSelectScene extends Phaser.Scene {
     return container;
   }
 
+  getLevels() {
+    return [
+      {
+        id: "promise",
+        name: "Promise",
+        duration: "2:55",
+        difficulty: "Normal",
+        requiredCode: null,
+        video: "assets/video/Promise.mp4",
+        audio: "assets/audio/promise.wav",
+        chart: buildPromiseChart()
+      },
+      {
+        id: "electricAngel",
+        name: "Electric Angel",
+        duration: "3:18",
+        difficulty: "Normal",
+        requiredCode: "ANGEL-02",
+        video: "assets/video/ElectricAngel.mp4",
+        audio: "assets/audio/electric.wav",
+        chart: buildElectricAngelChart()
+      },
+      {
+        id: "miku",
+        name: "Miku",
+        duration: "4:05",
+        difficulty: "Easy",
+        requiredCode: "MIKU-03",
+        video: "assets/video/Miku.mp4",
+        audio: "assets/audio/miku.wav",
+        chart: buildMikuChart()
+      }
+    ];
+  }
+
+  isLevelUnlocked(level) {
+    if (level.id === "promise") return true;
+    return !!this.unlocks[level.id];
+  }
+
+  openCodePrompt(level) {
+    const typed = window.prompt(`Ingresa el código para desbloquear ${level.name}`);
+
+    if (!typed) return;
+
+    const code = typed.trim().toUpperCase();
+
+    if (code === level.requiredCode) {
+      this.unlocks[level.id] = true;
+      localStorage.setItem("moonhero_unlocks", JSON.stringify(this.unlocks));
+      window.alert(`${level.name} desbloqueado`);
+      this.scene.restart();
+    } else {
+      window.alert("Código incorrecto");
+    }
+  }
+
+  handleLevelClick(level) {
+    if (this.isLevelUnlocked(level)) {
+      this.scene.start("GameScene", { levelData: level });
+    } else {
+      this.openCodePrompt(level);
+    }
+  }
+
   create() {
     const { width, height } = this.scale;
 
-    // Fondo base
+    this.unlocks = JSON.parse(localStorage.getItem("moonhero_unlocks") || "{}");
+
     this.add.rectangle(width / 2, height / 2, width, height, 0x070b17);
 
-    // Glow decorativo de fondo
     this.add.circle(width * 0.15, height * 0.2, 220, 0x2563eb, 0.07);
     this.add.circle(width * 0.85, height * 0.18, 180, 0x7c3aed, 0.06);
     this.add.circle(width * 0.82, height * 0.82, 250, 0x2563eb, 0.05);
 
-    // Panel central
     const panelGlow = this.add.rectangle(width / 2, height / 2, 1280, 860, 0x3b82f6, 0.05);
     this.add.rectangle(width / 2, height / 2, 1240, 820, 0x0b1020, 0.82)
       .setStrokeStyle(2, 0x1e3a8a, 0.45);
 
-    // Título sombra
     this.add.text(width / 2 + 3, 124 + 3, "SELECCIÓN DE NIVELES", {
       fontSize: "58px",
       color: "#1e3a8a",
@@ -197,7 +265,6 @@ export default class LevelSelectScene extends Phaser.Scene {
       fontFamily: "Georgia, serif"
     }).setOrigin(0.5);
 
-    // Título principal
     this.add.text(width / 2, 124, "SELECCIÓN DE NIVELES", {
       fontSize: "58px",
       color: "#ffffff",
@@ -205,55 +272,31 @@ export default class LevelSelectScene extends Phaser.Scene {
       fontFamily: "Georgia, serif"
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 182, "Elige una canción para comenzar", {
+    this.add.text(width / 2, 182, "Completa niveles para obtener los códigos", {
       fontSize: "24px",
       color: "#94a3b8",
       fontFamily: "Georgia, serif"
     }).setOrigin(0.5);
 
-    const levels = [
-      {
-        id: 1,
-        name: "Promise",
-        duration: "2:55",
-        difficulty: "Normal",
-        video: "assets/video/Promise.mp4",
-        audio: "assets/audio/promise.wav",
-        chart: buildPromiseChart()
-      },
-      {
-        id: 2,
-        name: "Miku",
-        duration: "4:05",
-        difficulty: "Easy",
-        video: "assets/video/Miku.mp4",
-        audio: "assets/audio/miku.wav",
-        chart: buildMikuChart()
-      },
-      {
-        id: 3,
-        name: "Electric Angel",
-        duration: "3:18",
-        difficulty: "Normal",
-        video: "assets/video/ElectricAngel.mp4",
-        audio: "assets/audio/electric.wav",
-        chart: buildElectricAngelChart()
-      }
-    ];
+    const levels = this.getLevels();
 
     levels.forEach((level, index) => {
       const y = 320 + (index * 150);
+      const unlocked = this.isLevelUnlocked(level);
 
       this.createRoundedButton(width / 2, y, 560, 96, {
-        title: level.name,
-        subtitle: `${level.duration}`,
-        baseColor: 0x1f3f8f,
-        hoverColor: 0x315ee8,
-        glowColor: 0x74a9ff,
-        borderColor: 0xc7dbff,
+        title: unlocked ? level.name : `${level.name} 🔒`,
+        subtitle: unlocked
+          ? `${level.duration} • ${level.difficulty}`
+          : "Bloqueado • requiere código",
+        baseColor: unlocked ? 0x1f3f8f : 0x374151,
+        hoverColor: unlocked ? 0x315ee8 : 0x4b5563,
+        glowColor: unlocked ? 0x74a9ff : 0x9ca3af,
+        borderColor: unlocked ? 0xc7dbff : 0xd1d5db,
         radius: 24,
+        locked: !unlocked,
         onClick: () => {
-          this.scene.start("GameScene", { levelData: level });
+          this.handleLevelClick(level);
         }
       });
     });
@@ -271,6 +314,18 @@ export default class LevelSelectScene extends Phaser.Scene {
         this.scene.start("MenuScene");
       }
     });
+
+    this.add.text(width / 2, 810, "Orden de progreso: Promise → Electric Angel → Miku", {
+      fontSize: "22px",
+      color: "#cbd5e1",
+      fontFamily: "Georgia, serif"
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 850, "Al completar un nivel recibirás el código del siguiente", {
+      fontSize: "18px",
+      color: "#64748b",
+      fontFamily: "Georgia, serif"
+    }).setOrigin(0.5);
 
     this.tweens.add({
       targets: panelGlow,

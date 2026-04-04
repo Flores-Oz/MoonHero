@@ -45,6 +45,123 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  showResultsPanel(rank, accuracy, unlockInfo) {
+    this.resultOverlay = this.add.rectangle(
+      this.width / 2,
+      this.height / 2,
+      this.width,
+      this.height,
+      0x000000,
+      0.72
+    ).setDepth(20);
+
+    this.resultPanel = this.add.rectangle(
+      this.width / 2,
+      this.height / 2,
+      760,
+      560,
+      0x0b1020,
+      0.96
+    )
+      .setStrokeStyle(3, 0x60a5fa, 0.6)
+      .setDepth(21);
+
+    this.add.text(this.width / 2, this.height / 2 - 220, "RESULTADOS", {
+      fontFamily: "Georgia, serif",
+      fontSize: "48px",
+      color: "#f8fafc",
+      fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 - 160, `Rango: ${rank}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "40px",
+      color: "#facc15",
+      fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 - 95, `Score: ${this.score}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "30px",
+      color: "#ffffff"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 - 50, `Accuracy: ${accuracy.toFixed(2)}%`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "28px",
+      color: "#cbd5e1"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 + 5, `Perfect: ${this.perfectCount}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "28px",
+      color: "#22c55e"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 + 45, `Good: ${this.goodCount}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "28px",
+      color: "#eab308"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 + 85, `Miss: ${this.missCount}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "28px",
+      color: "#ef4444"
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(this.width / 2, this.height / 2 + 125, `Max Combo: ${this.maxCombo}`, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "28px",
+      color: "#93c5fd"
+    }).setOrigin(0.5).setDepth(22);
+
+    if (unlockInfo.unlocks && unlockInfo.code) {
+      this.add.text(this.width / 2, this.height / 2 + 190, "Código del siguiente nivel:", {
+        fontFamily: "Georgia, serif",
+        fontSize: "28px",
+        color: "#f8fafc",
+        fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(22);
+
+      this.nextCodeText = this.add.text(this.width / 2, this.height / 2 + 235, unlockInfo.code, {
+        fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+        fontSize: "36px",
+        color: "#60a5fa",
+        fontStyle: "bold",
+        backgroundColor: "#111827",
+        padding: { left: 18, right: 18, top: 10, bottom: 10 }
+      }).setOrigin(0.5).setDepth(22);
+    } else {
+      this.add.text(this.width / 2, this.height / 2 + 210, "Has completado todos los niveles principales.", {
+        fontFamily: "Georgia, serif",
+        fontSize: "26px",
+        color: "#cbd5e1"
+      }).setOrigin(0.5).setDepth(22);
+    }
+
+    this.continueButton = this.createRoundedButton(
+      this.width / 2,
+      this.height / 2 + 300,
+      280,
+      74,
+      {
+        title: "CONTINUAR",
+        baseColor: 0x1f3f8f,
+        hoverColor: 0x315ee8,
+        glowColor: 0x74a9ff,
+        borderColor: 0xc7dbff,
+        radius: 22,
+        titleSize: "28px",
+        onClick: () => {
+          this.scene.start("LevelSelectScene");
+        }
+      }
+    );
+
+    this.continueButton.setDepth(23);
+  }
+
   createRoundedButton(x, y, width, height, options) {
     const {
       title = "Botón",
@@ -191,6 +308,20 @@ export default class GameScene extends Phaser.Scene {
     this.noteWidth = 72;
     this.noteHeight = 28;
 
+    this.score = 0;
+    this.combo = 0;
+    this.notes = this.add.group();
+
+    this.maxCombo = 0;
+    this.perfectCount = 0;
+    this.goodCount = 0;
+    this.missCount = 0;
+
+    this.resultOverlay = null;
+    this.resultPanel = null;
+    this.nextCodeText = null;
+    this.continueButton = null;
+
     this.retryButton = null;
     this.backButton = null;
 
@@ -308,6 +439,65 @@ export default class GameScene extends Phaser.Scene {
     }
 
     return normalized;
+  }
+
+  getUnlockCodeForLevel() {
+    const levelId = this.levelData.id || "";
+
+    const unlockMap = {
+      promise: {
+        unlocks: "electricAngel",
+        code: "ANGEL-02"
+      },
+      electricAngel: {
+        unlocks: "miku",
+        code: "MIKU-03"
+      },
+      miku: {
+        unlocks: null,
+        code: null
+      }
+    };
+
+    return unlockMap[levelId] || { unlocks: null, code: null };
+  }
+
+  saveUnlockedLevel(levelId) {
+    if (!levelId) return;
+
+    const saved = JSON.parse(localStorage.getItem("moonhero_unlocks") || "{}");
+    saved[levelId] = true;
+    localStorage.setItem("moonhero_unlocks", JSON.stringify(saved));
+  }
+
+  saveUnlockCode(code, unlockedLevelId) {
+    if (!code || !unlockedLevelId) return;
+
+    const saved = JSON.parse(localStorage.getItem("moonhero_codes") || "{}");
+    saved[code] = unlockedLevelId;
+    localStorage.setItem("moonhero_codes", JSON.stringify(saved));
+  }
+
+  calculateAccuracy() {
+    const totalJudged = this.perfectCount + this.goodCount + this.missCount;
+
+    if (totalJudged <= 0) return 0;
+
+    const earned =
+      (this.perfectCount * 1) +
+      (this.goodCount * 0.65) +
+      (this.missCount * 0);
+
+    return (earned / totalJudged) * 100;
+  }
+
+  getRank(accuracy) {
+    if (accuracy >= 98) return "SS";
+    if (accuracy >= 93) return "S";
+    if (accuracy >= 85) return "A";
+    if (accuracy >= 75) return "B";
+    if (accuracy >= 65) return "C";
+    return "D";
   }
 
   startLevel() {
@@ -605,50 +795,56 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  registerHit(note, label, points, delta = null) {
-  note.hit = true;
+ registerHit(note, label, points, delta = null) {
+    note.hit = true;
 
-  if (note.glow) {
-    this.tweens.killTweensOf(note.glow);
-  }
+    if (note.glow) {
+      this.tweens.killTweensOf(note.glow);
+    }
 
-  const hitX = note.x;
-  const hitY = this.receptorY;
+    const hitX = note.x;
+    const hitY = this.receptorY;
 
-  this.combo++;
-  this.score += points;
+    this.combo++;
+    this.maxCombo = Math.max(this.maxCombo, this.combo);
+    this.score += points;
 
-  this.scoreText.setText(`Score: ${this.score}`);
-  this.comboText.setText(`Combo: ${this.combo}`);
+    if (label === "PERFECT") {
+      this.perfectCount++;
+    } else if (label === "GOOD") {
+      this.goodCount++;
+    }
 
-  if (label === "PERFECT") {
-    this.spawnPerfectParticles(hitX, hitY, 0xffffff);
-  }
+    this.scoreText.setText(`Score: ${this.score}`);
+    this.comboText.setText(`Combo: ${this.combo}`);
 
-  this.tweens.killTweensOf(this.cameras.main);
-  this.cameras.main.zoom = 1;
+    if (label === "PERFECT") {
+      this.spawnPerfectParticles(hitX, hitY, 0xffffff);
+    }
 
-  this.tweens.add({
-    targets: this.cameras.main,
-    zoom: 1.02,
-    duration: 60,
-    yoyo: true
-  });
+    this.tweens.killTweensOf(this.cameras.main);
+    this.cameras.main.zoom = 1;
 
-  if (delta !== null) {
-    this.showFeedback(`${label}  ${Math.round(delta)}ms`);
-  } else {
-    this.showFeedback(label);
-  }
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: 1.02,
+      duration: 60,
+      yoyo: true
+    });
 
-  // POP de la nota + glow
-  this.tweens.add({
-    targets: [note, note.glow].filter(Boolean),
-    scaleX: 1.25,
-    scaleY: 1.25,
-    alpha: 0,
-    duration: 120,
-    ease: "Back.easeOut",
+    if (delta !== null) {
+      this.showFeedback(label);
+    } else {
+      this.showFeedback(label);
+    }
+
+    this.tweens.add({
+      targets: [note, note.glow].filter(Boolean),
+      scaleX: 1.25,
+      scaleY: 1.25,
+      alpha: 0,
+      duration: 120,
+      ease: "Back.easeOut",
       onComplete: () => {
         if (note.glow && note.glow.active) {
           note.glow.destroy();
@@ -666,6 +862,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.combo = 0;
     this.lives--;
+    this.missCount++;
 
     this.comboText.setText(`Combo: ${this.combo}`);
     this.livesText.setText(`Lives: ${Math.ceil(this.lives)}`);
@@ -725,6 +922,10 @@ export default class GameScene extends Phaser.Scene {
       this.bgVideo.stop();
     }
 
+    if (this.music && this.music.isPlaying) {
+      this.music.stop();
+    }
+
     this.notes.getChildren().forEach((note) => {
       if (note.glow) {
         this.tweens.killTweensOf(note.glow);
@@ -737,9 +938,16 @@ export default class GameScene extends Phaser.Scene {
     this.gameOverText.setText("NIVEL COMPLETADO");
     this.feedbackText.setText("");
 
-    this.time.delayedCall(1800, () => {
-      this.scene.start("LevelSelectScene");
-    });
+    const accuracy = this.calculateAccuracy();
+    const rank = this.getRank(accuracy);
+
+    const unlockInfo = this.getUnlockCodeForLevel();
+
+    if (unlockInfo.unlocks && unlockInfo.code) {
+      this.saveUnlockCode(unlockInfo.code, unlockInfo.unlocks);
+    }
+
+    this.showResultsPanel(rank, accuracy, unlockInfo);
   }
 
   showFeedback(text) {
