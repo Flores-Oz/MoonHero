@@ -328,13 +328,15 @@ export default class GameScene extends Phaser.Scene {
         const sourceW = videoElement.videoWidth;
         const sourceH = videoElement.videoHeight;
 
-        const scale = Math.min(
+        const baseScale = Math.min(
           (this.width * 0.88) / sourceW,
           (this.height * 0.88) / sourceH
         );
 
-        const finalW = sourceW * scale;
-        const finalH = sourceH * scale;
+        const finalScale = baseScale;
+
+        const finalW = sourceW * finalScale;
+        const finalH = sourceH * finalScale;
 
         this.bgVideo.setDisplaySize(finalW, finalH);
         this.bgVideo.setPosition(this.width / 2, this.height / 2);
