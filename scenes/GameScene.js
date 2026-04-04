@@ -5,6 +5,7 @@ export default class GameScene extends Phaser.Scene {
 
   init(data) {
     this.levelData = data.levelData || {
+      id: "promise",
       name: "Promise",
       video: "assets/video/Promise.mp4",
       audio: "assets/audio/promise.wav",
@@ -116,29 +117,21 @@ export default class GameScene extends Phaser.Scene {
       color: "#93c5fd"
     }).setOrigin(0.5).setDepth(22);
 
-    if (unlockInfo.unlocks && unlockInfo.code) {
-      this.add.text(this.width / 2, this.height / 2 + 190, "Código del siguiente nivel:", {
-        fontFamily: "Georgia, serif",
-        fontSize: "28px",
-        color: "#f8fafc",
-        fontStyle: "bold"
-      }).setOrigin(0.5).setDepth(22);
+    this.add.text(this.width / 2, this.height / 2 + 180, "Código del siguiente nivel", {
+      fontFamily: "Georgia, serif",
+      fontSize: "26px",
+      color: "#f8fafc",
+      fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(22);
 
-      this.nextCodeText = this.add.text(this.width / 2, this.height / 2 + 235, unlockInfo.code, {
-        fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
-        fontSize: "36px",
-        color: "#60a5fa",
-        fontStyle: "bold",
-        backgroundColor: "#111827",
-        padding: { left: 18, right: 18, top: 10, bottom: 10 }
-      }).setOrigin(0.5).setDepth(22);
-    } else {
-      this.add.text(this.width / 2, this.height / 2 + 210, "Has completado todos los niveles principales.", {
-        fontFamily: "Georgia, serif",
-        fontSize: "26px",
-        color: "#cbd5e1"
-      }).setOrigin(0.5).setDepth(22);
-    }
+    this.nextCodeText = this.add.text(this.width / 2, this.height / 2 + 230, unlockInfo.code, {
+      fontFamily: "'Trebuchet MS', 'Verdana', sans-serif",
+      fontSize: "40px",
+      color: "#60a5fa",
+      fontStyle: "bold",
+      backgroundColor: "#111827",
+      padding: { left: 22, right: 22, top: 12, bottom: 12 }
+    }).setOrigin(0.5).setDepth(22);
 
     this.continueButton = this.createRoundedButton(
       this.width / 2,
@@ -307,10 +300,6 @@ export default class GameScene extends Phaser.Scene {
     this.receptorHeight = 24;
     this.noteWidth = 72;
     this.noteHeight = 28;
-
-    this.score = 0;
-    this.combo = 0;
-    this.notes = this.add.group();
 
     this.maxCombo = 0;
     this.perfectCount = 0;
